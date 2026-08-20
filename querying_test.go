@@ -1,6 +1,8 @@
 package result_test
 
 import (
+	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -101,4 +103,44 @@ func TestResult_IsOkAnd(t *testing.T) {
 			assert.Equal(t, tt.want, got, "want: %v, got: %v", tt.want, got)
 		})
 	}
+}
+
+func ExampleResult_IsErr() {
+	fmt.Println(result.Err[int](errors.New("late")).IsErr())
+	fmt.Println(result.Ok[int, error](2).IsErr())
+
+	// Output:
+	// true
+	// false
+}
+
+func ExampleResult_IsOk() {
+	fmt.Println(result.Err[int](errors.New("late")).IsOk())
+	fmt.Println(result.Ok[int, error](2).IsOk())
+
+	// Output:
+	// false
+	// true
+}
+
+func ExampleResult_IsErrAnd() {
+	isLate := func(err error) bool { return err.Error() == "late" }
+
+	fmt.Println(result.Ok[int, error](2).IsErrAnd(isLate))
+	fmt.Println(result.Err[int](errors.New("late")).IsErrAnd(isLate))
+
+	// Output:
+	// false
+	// true
+}
+
+func ExampleResult_IsOkAnd() {
+	positive := func(v int) bool { return v > 0 }
+
+	fmt.Println(result.Err[int](errors.New("late")).IsOkAnd(positive))
+	fmt.Println(result.Ok[int, error](5).IsOkAnd(positive))
+
+	// Output:
+	// false
+	// true
 }

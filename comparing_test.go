@@ -1,6 +1,7 @@
 package result_test
 
 import (
+	"fmt"
 	"math"
 	"testing"
 
@@ -151,4 +152,76 @@ func TestLt(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func ExampleCompare() {
+	fmt.Println(result.Compare(result.Ok[int, string](1), result.Err[int]("e")))
+	fmt.Println(result.Compare(result.Err[int]("e"), result.Ok[int, string](1)))
+	fmt.Println(result.Compare(result.Ok[int, string](1), result.Ok[int, string](2)))
+	fmt.Println(result.Compare(result.Ok[int, string](2), result.Ok[int, string](1)))
+	fmt.Println(result.Compare(result.Ok[int, string](1), result.Ok[int, string](1)))
+	fmt.Println(result.Compare(result.Err[int]("a"), result.Err[int]("a")))
+
+	// Output:
+	// -1
+	// 1
+	// -1
+	// 1
+	// 0
+	// 0
+}
+
+func ExampleEqual() {
+	fmt.Println(result.Equal(result.Ok[int, string](2), result.Ok[int, string](2)))
+	fmt.Println(result.Equal(result.Ok[int, string](2), result.Err[int]("e")))
+	fmt.Println(result.Equal(result.Err[int]("e"), result.Err[int]("e")))
+
+	// Output:
+	// true
+	// false
+	// true
+}
+
+func ExampleGe() {
+	fmt.Println(result.Ge(result.Ok[int, string](2), result.Ok[int, string](1)))
+	fmt.Println(result.Ge(result.Ok[int, string](1), result.Ok[int, string](1)))
+	fmt.Println(result.Ge(result.Ok[int, string](1), result.Err[int]("e")))
+
+	// Output:
+	// true
+	// true
+	// false
+}
+
+func ExampleGt() {
+	fmt.Println(result.Gt(result.Ok[int, string](2), result.Ok[int, string](1)))
+	fmt.Println(result.Gt(result.Ok[int, string](1), result.Ok[int, string](1)))
+	fmt.Println(result.Gt(result.Err[int]("e"), result.Ok[int, string](1)))
+
+	// Output:
+	// true
+	// false
+	// true
+}
+
+func ExampleLe() {
+	fmt.Println(result.Le(result.Ok[int, string](1), result.Ok[int, string](2)))
+	fmt.Println(result.Le(result.Ok[int, string](1), result.Ok[int, string](1)))
+	fmt.Println(result.Le(result.Err[int]("e"), result.Ok[int, string](1)))
+
+	// Output:
+	// true
+	// true
+	// false
+}
+
+func ExampleLt() {
+	fmt.Println(result.Lt(result.Ok[int, string](1), result.Ok[int, string](2)))
+	fmt.Println(result.Lt(result.Ok[int, string](1), result.Ok[int, string](1)))
+	fmt.Println(result.Lt(result.Ok[int, string](1), result.Err[int]("e")))
+
+	// Output:
+	// true
+	// false
+	// true
 }

@@ -1,6 +1,8 @@
 package result_test
 
 import (
+	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -74,4 +76,41 @@ func TestResult_Unpack(t *testing.T) {
 			assert.Equal(t, tt.wantOk, tt.give.IsOk())
 		})
 	}
+}
+
+func ExampleResult_Get() {
+	if v, ok := result.Ok[int, error](7).Get(); ok {
+		fmt.Println(v)
+	}
+
+	if _, ok := result.Err[int](errors.New("late")).Get(); !ok {
+		fmt.Println("err")
+	}
+
+	// Output:
+	// 7
+	// err
+}
+
+func ExampleResult_GetErr() {
+	if err, ok := result.Err[int](errors.New("late")).GetErr(); ok {
+		fmt.Println(err)
+	}
+
+	if _, ok := result.Ok[int, error](7).GetErr(); !ok {
+		fmt.Println("ok")
+	}
+
+	// Output:
+	// late
+	// ok
+}
+
+func ExampleUnpack() {
+	fmt.Println(result.Unpack(result.Ok[int, error](7)))
+	fmt.Println(result.Unpack(result.Err[int](errors.New("late"))))
+
+	// Output:
+	// 7 <nil>
+	// 0 late
 }

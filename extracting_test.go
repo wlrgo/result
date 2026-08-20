@@ -1,6 +1,7 @@
 package result_test
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
@@ -163,4 +164,75 @@ func TestResult_UnwrapOrElse(t *testing.T) {
 			assert.Equal(t, tt.wantCalls, calls)
 		})
 	}
+}
+
+func ExampleResult_Expect() {
+	defer func() { fmt.Println(recover()) }()
+
+	fmt.Println(result.Ok[string, error]("value").Expect("fruits are healthy"))
+	result.Err[string](errors.New("empty")).Expect("string should not be empty")
+
+	// Output:
+	// value
+	// string should not be empty: empty
+}
+
+func ExampleResult_ExpectErr() {
+	defer func() { fmt.Println(recover()) }()
+
+	fmt.Println(result.Err[int](errors.New("late")).ExpectErr("should fail"))
+	result.Ok[int, error](10).ExpectErr("should fail")
+
+	// Output:
+	// late
+	// should fail: 10
+}
+
+func ExampleResult_Unwrap() {
+	defer func() { fmt.Println(recover()) }()
+
+	fmt.Println(result.Ok[string, error]("air").Unwrap())
+	result.Err[string](errors.New("late")).Unwrap()
+
+	// Output:
+	// air
+	// result: Unwrap called on Err: late
+}
+
+func ExampleResult_UnwrapErr() {
+	defer func() { fmt.Println(recover()) }()
+
+	fmt.Println(result.Err[int](errors.New("late")).UnwrapErr())
+	result.Ok[int, error](10).UnwrapErr()
+
+	// Output:
+	// late
+	// result: UnwrapErr called on Ok: 10
+}
+
+func ExampleResult_UnwrapOr() {
+	fmt.Println(result.Err[string](errors.New("late")).UnwrapOr("bike"))
+	fmt.Println(result.Ok[string, error]("car").UnwrapOr("bike"))
+
+	// Output:
+	// bike
+	// car
+}
+
+func ExampleResult_UnwrapOrDefault() {
+	fmt.Println(result.Err[int](errors.New("late")).UnwrapOrDefault())
+	fmt.Println(result.Ok[int, error](123).UnwrapOrDefault())
+
+	// Output:
+	// 0
+	// 123
+}
+
+func ExampleResult_UnwrapOrElse() {
+	fmt.Println(result.Err[int](errors.New("late")).UnwrapOrElse(func(error) int { return 10 }))
+	fmt.Println(result.Ok[int, error](6).UnwrapOrElse(func(error) int { return 10 }))
+
+	// Output:
+	// 10
+	// 6
 }
