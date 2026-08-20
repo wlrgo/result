@@ -1,6 +1,8 @@
 package result_test
 
 import (
+	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -84,4 +86,32 @@ func TestResult_Seq(t *testing.T) {
 		}
 		assert.Equal(t, 1, n)
 	})
+}
+
+func ExampleCollect() {
+	fmt.Println(
+		result.Collect([]result.Result[int, error]{result.Ok[int, error](1), result.Ok[int, error](2)}).
+			UnwrapOr([]int{-1}),
+	)
+	fmt.Println(
+		result.Collect([]result.Result[int, error]{result.Ok[int, error](1), result.Err[int](errors.New("late"))}).
+			UnwrapOr([]int{-1}),
+	)
+
+	// Output:
+	// [1 2]
+	// [-1]
+}
+
+func ExampleResult_Seq() {
+	for v := range result.Ok[int, error](2).Seq() {
+		fmt.Println(v)
+	}
+
+	for range result.Err[int](errors.New("late")).Seq() {
+		fmt.Println("err")
+	}
+
+	// Output:
+	// 2
 }

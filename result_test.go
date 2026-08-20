@@ -2,6 +2,7 @@ package result_test
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -49,4 +50,44 @@ func TestFrom(t *testing.T) {
 		got := result.From(1, err)
 		assert.Equal(t, err, got.UnwrapErr())
 	})
+}
+
+func ExampleFrom() {
+	parse := func(s string) (int, error) {
+		if s == "7" {
+			return 7, nil
+		}
+		return 0, errors.New("invalid")
+	}
+
+	fmt.Println(result.From(parse("7")).UnwrapOr(-1))
+	fmt.Println(result.From(parse("x")).UnwrapOr(-1))
+
+	// Output:
+	// 7
+	// -1
+}
+
+func ExampleResult() {
+	var res result.Result[int, error]
+
+	fmt.Println(res.IsErr())
+	// Output: true
+}
+
+func ExampleErr() {
+	res := result.Err[int](errors.New("late"))
+
+	fmt.Println(res.IsErr())
+	// Output: true
+}
+
+func ExampleOk() {
+	res := result.Ok[int, error](10)
+
+	fmt.Println(res.IsOk())
+	fmt.Println(res.Unwrap())
+	// Output:
+	// true
+	// 10
 }

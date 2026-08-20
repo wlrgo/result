@@ -1,6 +1,8 @@
 package result_test
 
 import (
+	"errors"
+	"fmt"
 	"strconv"
 	"testing"
 
@@ -231,4 +233,88 @@ func TestOrElse(t *testing.T) {
 			assert.Equal(t, tt.wantValue, got.UnwrapOr(-1))
 		})
 	}
+}
+
+func ExampleAnd() {
+	x := result.Ok[int, error](2)
+	y := result.Err[string](errors.New("late"))
+	fmt.Println(result.And(x, y).UnwrapOr("-"))
+
+	x = result.Err[int](errors.New("early"))
+	y = result.Ok[string, error]("foo")
+	fmt.Println(result.And(x, y).UnwrapOr("-"))
+
+	x = result.Ok[int, error](2)
+	y = result.Ok[string, error]("foo")
+	fmt.Println(result.And(x, y).UnwrapOr("-"))
+
+	x = result.Err[int](errors.New("early"))
+	y = result.Err[string](errors.New("late"))
+	fmt.Println(result.And(x, y).UnwrapOr("-"))
+
+	// Output:
+	// -
+	// -
+	// foo
+	// -
+}
+
+func ExampleAndThen() {
+	sqThenToString := func(x int) result.Result[string, error] {
+		if x > 10_000 {
+			return result.Err[string](errors.New("overflow"))
+		}
+		return result.Ok[string, error](strconv.Itoa(x * x))
+	}
+
+	fmt.Println(result.AndThen(result.Ok[int, error](2), sqThenToString).UnwrapOr("-"))
+	fmt.Println(result.AndThen(result.Ok[int, error](1_000_000), sqThenToString).UnwrapOr("-"))
+	fmt.Println(result.AndThen(result.Err[int](errors.New("empty")), sqThenToString).UnwrapOr("-"))
+
+	// Output:
+	// 4
+	// -
+	// -
+}
+
+func ExampleOr() {
+	x := result.Ok[int, error](2)
+	y := result.Err[int](errors.New("late"))
+	fmt.Println(result.Or(x, y).UnwrapOr(-1))
+
+	x = result.Err[int](errors.New("early"))
+	y = result.Ok[int, error](100)
+	fmt.Println(result.Or(x, y).UnwrapOr(-1))
+
+	x = result.Ok[int, error](2)
+	y = result.Ok[int, error](100)
+	fmt.Println(result.Or(x, y).UnwrapOr(-1))
+
+	x = result.Err[int](errors.New("early"))
+	y = result.Err[int](errors.New("late"))
+	fmt.Println(result.Or(x, y).UnwrapOr(-1))
+
+	// Output:
+	// 2
+	// 100
+	// 2
+	// -1
+}
+
+func ExampleOrElse() {
+	nobody := func(error) result.Result[string, error] {
+		return result.Err[string](errors.New("nobody"))
+	}
+	vikings := func(error) result.Result[string, error] {
+		return result.Ok[string, error]("vikings")
+	}
+
+	fmt.Println(result.OrElse(result.Ok[string, error]("barbarians"), vikings).UnwrapOr("-"))
+	fmt.Println(result.OrElse(result.Err[string](errors.New("empty")), vikings).UnwrapOr("-"))
+	fmt.Println(result.OrElse(result.Err[string](errors.New("empty")), nobody).UnwrapOr("-"))
+
+	// Output:
+	// barbarians
+	// vikings
+	// -
 }

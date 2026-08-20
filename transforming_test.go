@@ -1,6 +1,8 @@
 package result_test
 
 import (
+	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -246,4 +248,117 @@ func TestResult_InspectErr(t *testing.T) {
 			assert.Equal(t, tt.wantValue, got.Unwrap())
 		})
 	}
+}
+
+func ExampleFlatten() {
+	x := result.Ok[result.Result[int, error], error](result.Ok[int, error](6))
+	fmt.Println(result.Flatten(x).UnwrapOr(-1))
+
+	x = result.Ok[result.Result[int, error], error](result.Err[int](errors.New("inner")))
+	fmt.Println(result.Flatten(x).UnwrapOr(-1))
+
+	x = result.Err[result.Result[int, error]](errors.New("outer"))
+	fmt.Println(result.Flatten(x).UnwrapOr(-1))
+
+	// Output:
+	// 6
+	// -1
+	// -1
+}
+
+func ExampleMap() {
+	x := result.Ok[string, error]("Hello, World!")
+	fmt.Println(result.Map(x, func(v string) int { return len(v) }).UnwrapOr(-1))
+
+	y := result.Err[string](errors.New("late"))
+	fmt.Println(result.Map(y, func(v string) int { return len(v) }).UnwrapOr(-1))
+
+	// Output:
+	// 13
+	// -1
+}
+
+func ExampleMapErr() {
+	x := result.Ok[string, error]("foo")
+	fmt.Println(result.MapErr(x, func(err error) string { return err.Error() }).UnwrapOr("-"))
+
+	y := result.Err[string](errors.New("late"))
+	fmt.Println(result.MapErr(y, func(err error) string { return err.Error() }).UnwrapErr())
+
+	// Output:
+	// foo
+	// late
+}
+
+func ExampleMapOr() {
+	x := result.Ok[string, error]("foo")
+	fmt.Println(result.MapOr(x, 42, func(v string) int { return len(v) }))
+
+	x = result.Err[string](errors.New("late"))
+	fmt.Println(result.MapOr(x, 42, func(v string) int { return len(v) }))
+
+	// Output:
+	// 3
+	// 42
+}
+
+func ExampleMapOrDefault() {
+	x := result.Ok[string, error]("hi")
+	y := result.Err[string](errors.New("late"))
+
+	fmt.Println(result.MapOrDefault(x, func(v string) int { return len(v) }))
+	fmt.Println(result.MapOrDefault(y, func(v string) int { return len(v) }))
+
+	// Output:
+	// 2
+	// 0
+}
+
+func ExampleMapOrElse() {
+	i := 21
+
+	x := result.Ok[string, error]("foo")
+	fmt.Println(
+		result.MapOrElse(
+			x,
+			func(error) int { return 2 * i },
+			func(v string) int { return len(v) },
+		),
+	)
+
+	x = result.Err[string](errors.New("late"))
+	fmt.Println(
+		result.MapOrElse(
+			x,
+			func(error) int { return 2 * i },
+			func(v string) int { return len(v) },
+		),
+	)
+
+	// Output:
+	// 3
+	// 42
+}
+
+func ExampleResult_Inspect() {
+	x := result.Ok[int, error](2).Inspect(func(v int) { fmt.Println("got:", v) })
+
+	fmt.Println(x.Unwrap())
+
+	result.Err[int](errors.New("late")).Inspect(func(v int) { fmt.Println("got:", v) })
+
+	// Output:
+	// got: 2
+	// 2
+}
+
+func ExampleResult_InspectErr() {
+	result.Ok[int, error](2).InspectErr(func(err error) { fmt.Println("err:", err) })
+
+	x := result.Err[int](errors.New("late")).InspectErr(func(err error) { fmt.Println("err:", err) })
+	fmt.Println(x.IsErr())
+
+	// Output:
+	// err: late
+	// true
 }
