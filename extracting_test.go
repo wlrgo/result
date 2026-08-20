@@ -1,6 +1,7 @@
 package result_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -22,7 +23,7 @@ func TestResult_Expect(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.wantPanic {
-				assert.PanicsWithValue(t, msg, func() { tt.give.Expect(msg) })
+				assert.PanicsWithValue(t, fmt.Sprintf("%s: %v", msg, ErrTest), func() { tt.give.Expect(msg) })
 				return
 			}
 			got := tt.give.Expect(msg)
@@ -37,16 +38,16 @@ func TestResult_ExpectErr(t *testing.T) {
 		name      string
 		give      result.Result[int, error]
 		want      error
-		wantPanic bool
+		wantPanic any
 	}{
-		{"err", result.Err[int](ErrTest), ErrTest, false},
-		{"ok", result.Ok[int, error](10), nil, true},
+		{"err", result.Err[int](ErrTest), ErrTest, nil},
+		{"ok", result.Ok[int, error](10), nil, fmt.Sprintf("%s: %v", msg, 10)},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.wantPanic {
-				assert.PanicsWithValue(t, msg, func() { tt.give.ExpectErr(msg) })
+			if tt.wantPanic != nil {
+				assert.PanicsWithValue(t, tt.wantPanic, func() { tt.give.ExpectErr(msg) })
 				return
 			}
 			got := tt.give.ExpectErr(msg)
@@ -60,16 +61,16 @@ func TestResult_Unwrap(t *testing.T) {
 		name      string
 		give      result.Result[int, error]
 		want      int
-		wantPanic bool
+		wantPanic any
 	}{
-		{"err", result.Err[int](ErrTest), 0, true},
-		{"ok", result.Ok[int, error](10), 10, false},
+		{"err", result.Err[int](ErrTest), 0, "result: Unwrap called on Err: test"},
+		{"ok", result.Ok[int, error](10), 10, nil},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.wantPanic {
-				assert.Panics(t, func() { tt.give.Unwrap() })
+			if tt.wantPanic != nil {
+				assert.PanicsWithValue(t, tt.wantPanic, func() { tt.give.Unwrap() })
 				return
 			}
 			got := tt.give.Unwrap()
@@ -83,16 +84,16 @@ func TestResult_UnwrapErr(t *testing.T) {
 		name      string
 		give      result.Result[int, error]
 		want      error
-		wantPanic bool
+		wantPanic any
 	}{
-		{"err", result.Err[int](ErrTest), ErrTest, false},
-		{"ok", result.Ok[int, error](10), nil, true},
+		{"err", result.Err[int](ErrTest), ErrTest, nil},
+		{"ok", result.Ok[int, error](10), nil, "result: UnwrapErr called on Ok: 10"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.wantPanic {
-				assert.Panics(t, func() { tt.give.UnwrapErr() })
+			if tt.wantPanic != nil {
+				assert.PanicsWithValue(t, tt.wantPanic, func() { tt.give.UnwrapErr() })
 				return
 			}
 			got := tt.give.UnwrapErr()
@@ -109,6 +110,7 @@ func TestResult_UnwrapOr(t *testing.T) {
 	}{
 		{"err", result.Err[int](ErrTest), 67},
 		{"ok", result.Ok[int, error](10), 10},
+		{"ok zero", result.Ok[int, error](0), 0},
 	}
 
 	for _, tt := range tests {
@@ -127,6 +129,7 @@ func TestResult_UnwrapOrDefault(t *testing.T) {
 	}{
 		{"err", result.Err[int](ErrTest), 0},
 		{"ok", result.Ok[int, error](10), 10},
+		{"ok zero", result.Ok[int, error](0), 0},
 	}
 
 	for _, tt := range tests {
@@ -151,8 +154,9 @@ func TestResult_UnwrapOrElse(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			calls := 0
-			got := tt.give.UnwrapOrElse(func(error) int {
+			got := tt.give.UnwrapOrElse(func(err error) int {
 				calls++
+				assert.Equal(t, ErrTest, err)
 				return 67
 			})
 			assert.Equal(t, tt.want, got)

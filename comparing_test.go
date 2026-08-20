@@ -15,7 +15,10 @@ func TestCompare(t *testing.T) {
 		want int
 	}{
 		{"err err", result.Err[int]("string"), result.Err[int]("string"), 0},
+		{"err less", result.Err[int]("a"), result.Err[int]("b"), -1},
+		{"err greater", result.Err[int]("b"), result.Err[int]("a"), 1},
 		{"zero err", result.Result[int, string]{}, result.Err[int]("string"), -1},
+		{"zero empty err", result.Result[int, string]{}, result.Err[int](""), 0},
 		{"err ok", result.Err[int]("string"), result.Ok[int, string](1), 1},
 		{"ok err", result.Ok[int, string](1), result.Err[int]("string"), -1},
 		{"ok less", result.Ok[int, string](1), result.Ok[int, string](2), -1},
@@ -38,7 +41,9 @@ func TestEqual(t *testing.T) {
 		want bool
 	}{
 		{"err err", result.Err[int]("string"), result.Err[int]("string"), true},
+		{"err different", result.Err[int]("a"), result.Err[int]("b"), false},
 		{"zero err", result.Result[int, string]{}, result.Err[int]("string"), false},
+		{"zero empty err", result.Result[int, string]{}, result.Err[int](""), true},
 		{"err ok", result.Err[int]("string"), result.Ok[int, string](0), false},
 		{"ok err", result.Ok[int, string](0), result.Err[int]("string"), false},
 		{"ok equal", result.Ok[int, string](2), result.Ok[int, string](2), true},

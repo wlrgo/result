@@ -12,19 +12,19 @@ func TestFlatten(t *testing.T) {
 		name      string
 		give      result.Result[result.Result[int, error], error]
 		wantValue int
-		wantErr   bool
+		wantErr   error
 	}{
-		{"ok ok", result.Ok[result.Result[int, error], error](result.Ok[int, error](6)), 6, false},
-		{"ok err", result.Ok[result.Result[int, error], error](result.Err[int](ErrTest)), 0, true},
-		{"err", result.Err[result.Result[int, error]](ErrTest), 0, true},
+		{"ok ok", result.Ok[result.Result[int, error], error](result.Ok[int, error](6)), 6, nil},
+		{"ok err", result.Ok[result.Result[int, error], error](result.Err[int](ErrTest)), 0, ErrTest},
+		{"err", result.Err[result.Result[int, error]](ErrOther), 0, ErrOther},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := result.Flatten(tt.give)
 
-			if tt.wantErr {
-				assert.True(t, got.IsErr())
+			if tt.wantErr != nil {
+				assert.Equal(t, tt.wantErr, got.UnwrapErr())
 				return
 			}
 
@@ -56,7 +56,7 @@ func TestMap(t *testing.T) {
 			assert.Equal(t, tt.wantCalls, calls)
 
 			if tt.wantErr {
-				assert.True(t, got.IsErr())
+				assert.Equal(t, ErrTest, got.UnwrapErr())
 				return
 			}
 
@@ -82,13 +82,14 @@ func TestMapErr(t *testing.T) {
 			calls := 0
 			got := result.MapErr(tt.give, func(err error) string {
 				calls++
+				assert.Equal(t, ErrTest, err)
 				return err.Error()
 			})
 
 			assert.Equal(t, tt.wantCalls, calls)
 
 			if tt.wantErr {
-				assert.True(t, got.IsErr())
+				assert.Equal(t, ErrTest.Error(), got.UnwrapErr())
 				return
 			}
 
@@ -165,8 +166,9 @@ func TestMapOrElse(t *testing.T) {
 			defaultCalls := 0
 			got := result.MapOrElse(
 				tt.give,
-				func(error) int {
+				func(err error) int {
 					defaultCalls++
+					assert.Equal(t, ErrTest, err)
 					return 42
 				},
 				func(v string) int {
@@ -205,7 +207,7 @@ func TestResult_Inspect(t *testing.T) {
 			assert.Equal(t, tt.wantCalls, calls)
 
 			if tt.wantErr {
-				assert.True(t, got.IsErr())
+				assert.Equal(t, ErrTest, got.UnwrapErr())
 				return
 			}
 
@@ -237,7 +239,7 @@ func TestResult_InspectErr(t *testing.T) {
 			assert.Equal(t, tt.wantCalls, calls)
 
 			if tt.wantErr != nil {
-				assert.True(t, got.IsErr())
+				assert.Equal(t, tt.wantErr, got.UnwrapErr())
 				return
 			}
 

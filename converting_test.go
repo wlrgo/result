@@ -16,6 +16,8 @@ func TestResult_Get(t *testing.T) {
 	}{
 		{"err", result.Err[int](ErrTest), 0, false},
 		{"ok", result.Ok[int, error](7), 7, true},
+		{"ok zero", result.Ok[int, error](0), 0, true},
+		{"zero value", result.Result[int, error]{}, 0, false},
 	}
 
 	for _, tt := range tests {
@@ -36,6 +38,8 @@ func TestResult_GetErr(t *testing.T) {
 	}{
 		{"err", result.Err[int](ErrTest), ErrTest, true},
 		{"ok", result.Ok[int, error](7), nil, false},
+		{"ok zero", result.Ok[int, error](0), nil, false},
+		{"zero value", result.Result[int, error]{}, nil, true},
 	}
 
 	for _, tt := range tests {
@@ -49,13 +53,17 @@ func TestResult_GetErr(t *testing.T) {
 
 func TestResult_Unpack(t *testing.T) {
 	tests := []struct {
-		name  string
-		give  result.Result[int, error]
-		wantT int
-		wantE error
+		name   string
+		give   result.Result[int, error]
+		wantT  int
+		wantE  error
+		wantOk bool
 	}{
-		{"err", result.Err[int](ErrTest), 0, ErrTest},
-		{"ok", result.Ok[int, error](7), 7, nil},
+		{"err", result.Err[int](ErrTest), 0, ErrTest, false},
+		{"ok", result.Ok[int, error](7), 7, nil, true},
+		{"ok zero", result.Ok[int, error](0), 0, nil, true},
+		{"nil err", result.Err[int](error(nil)), 0, nil, false},
+		{"zero value", result.Result[int, error]{}, 0, nil, false},
 	}
 
 	for _, tt := range tests {
@@ -63,6 +71,7 @@ func TestResult_Unpack(t *testing.T) {
 			gotT, gotE := result.Unpack(tt.give)
 			assert.Equal(t, tt.wantT, gotT)
 			assert.Equal(t, tt.wantE, gotE)
+			assert.Equal(t, tt.wantOk, tt.give.IsOk())
 		})
 	}
 }

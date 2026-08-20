@@ -18,8 +18,8 @@ func Collect[T, E any](results []Result[T, E]) Result[[]T, E] {
 // Seq
 func (res Result[T, E]) Seq() iter.Seq[T] {
 	return func(yield func(T) bool) {
-		if res.IsOk() {
-			yield(res.value)
+		if res.IsOk() && !yield(res.value) {
+			return
 		}
 	}
 }
