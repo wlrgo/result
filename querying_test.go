@@ -15,6 +15,7 @@ func TestResult_IsErr(t *testing.T) {
 	}{
 		{"err", result.Err[int](ErrTest), true},
 		{"ok", result.Ok[int, error](123), false},
+		{"zero", result.Result[int, error]{}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -32,6 +33,7 @@ func TestResult_IsErrAnd(t *testing.T) {
 		want bool
 	}{
 		{"ok", result.Ok[int, error](123), nil, false},
+		{"zero with nil err", result.Result[int, error]{}, func(err error) bool { return err == nil }, true},
 		{
 			"err with false predicate",
 			result.Err[int](ErrTest),
@@ -61,6 +63,7 @@ func TestResult_IsOk(t *testing.T) {
 	}{
 		{"err", result.Err[int](ErrTest), false},
 		{"ok", result.Ok[int, error](123), true},
+		{"zero", result.Result[int, error]{}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -78,6 +81,7 @@ func TestResult_IsOkAnd(t *testing.T) {
 		want bool
 	}{
 		{"err", result.Err[int](ErrTest), nil, false},
+		{"zero", result.Result[int, error]{}, nil, false},
 		{
 			"ok with false predicate",
 			result.Ok[int, error](123),

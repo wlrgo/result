@@ -1,7 +1,6 @@
 package result_test
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,32 +12,33 @@ func TestCollect(t *testing.T) {
 		name      string
 		give      []result.Result[int, error]
 		wantValue []int
-		wantErr   bool
+		wantErr   error
 	}{
-		{"empty", nil, []int{}, false},
+		{"empty nil", nil, []int{}, nil},
+		{"empty slice", []result.Result[int, error]{}, []int{}, nil},
 		{
 			"all ok",
 			[]result.Result[int, error]{result.Ok[int, error](1), result.Ok[int, error](2)},
 			[]int{1, 2},
-			false,
+			nil,
 		},
 		{
 			"first err",
-			[]result.Result[int, error]{result.Err[int](errors.New("123")), result.Ok[int, error](2)},
+			[]result.Result[int, error]{result.Err[int](ErrTest), result.Ok[int, error](2)},
 			nil,
-			true,
+			ErrTest,
 		},
 		{
 			"middle err",
-			[]result.Result[int, error]{result.Ok[int, error](1), result.Err[int](errors.New("123")), result.Ok[int, error](3)},
+			[]result.Result[int, error]{result.Ok[int, error](1), result.Err[int](ErrOther), result.Ok[int, error](3)},
 			nil,
-			true,
+			ErrOther,
 		},
 		{
 			"last err",
-			[]result.Result[int, error]{result.Ok[int, error](1), result.Err[int](errors.New("123"))},
+			[]result.Result[int, error]{result.Ok[int, error](1), result.Err[int](ErrTest)},
 			nil,
-			true,
+			ErrTest,
 		},
 	}
 
@@ -46,8 +46,8 @@ func TestCollect(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := result.Collect(tt.give)
 
-			if tt.wantErr {
-				assert.True(t, got.IsErr())
+			if tt.wantErr != nil {
+				assert.Equal(t, tt.wantErr, got.UnwrapErr())
 				return
 			}
 
@@ -62,7 +62,7 @@ func TestResult_Seq(t *testing.T) {
 		give result.Result[int, error]
 		want []int
 	}{
-		{"err", result.Err[int](errors.New("123")), nil},
+		{"err", result.Err[int](ErrTest), nil},
 		{"ok", result.Ok[int, error](2), []int{2}},
 	}
 
@@ -75,4 +75,13 @@ func TestResult_Seq(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+
+	t.Run("ok break", func(t *testing.T) {
+		n := 0
+		for range result.Ok[int, error](2).Seq() {
+			n++
+			break
+		}
+		assert.Equal(t, 1, n)
+	})
 }

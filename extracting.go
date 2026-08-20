@@ -1,10 +1,11 @@
 package result
 
+import "fmt"
+
 // Expect
 func (res Result[T, E]) Expect(msg string) T {
 	if res.IsErr() {
-		// TODO: print res.err
-		panic(msg)
+		panic(fmt.Sprintf("%s: %v", msg, res.err))
 	}
 
 	return res.value
@@ -12,8 +13,7 @@ func (res Result[T, E]) Expect(msg string) T {
 
 // Unwrap
 func (res Result[T, E]) Unwrap() T {
-	// TODO: print res.err
-	return res.Expect("called `Result::unwrap()` on an `Err` value")
+	return res.Expect("result: Unwrap called on Err")
 }
 
 // UnwrapOr
@@ -41,8 +41,7 @@ func (res Result[T, E]) UnwrapOrElse(f func(E) T) T {
 // ExpectErr
 func (res Result[T, E]) ExpectErr(msg string) E {
 	if res.IsOk() {
-		// TODO: print res.value
-		panic(msg)
+		panic(fmt.Sprintf("%s: %v", msg, res.value))
 	}
 
 	return res.err
@@ -50,6 +49,5 @@ func (res Result[T, E]) ExpectErr(msg string) E {
 
 // UnwrapErr
 func (res Result[T, E]) UnwrapErr() E {
-	// TODO: print res.value
-	return res.ExpectErr("called `Result::unwrap_err()` on an `Ok` value")
+	return res.ExpectErr("result: UnwrapErr called on Ok")
 }

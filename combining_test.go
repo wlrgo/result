@@ -1,7 +1,6 @@
 package result_test
 
 import (
-	"errors"
 	"strconv"
 	"testing"
 
@@ -15,35 +14,35 @@ func TestAnd(t *testing.T) {
 		a         result.Result[int, error]
 		b         result.Result[string, error]
 		wantValue string
-		wantErr   bool
+		wantErr   error
 	}{
 		{
 			"ok err",
 			result.Ok[int, error](2),
-			result.Err[string](errors.New("123")),
+			result.Err[string](ErrTest),
 			"",
-			true,
+			ErrTest,
 		},
 		{
 			"err ok",
-			result.Err[int](errors.New("123")),
+			result.Err[int](ErrTest),
 			result.Ok[string, error]("2"),
 			"",
-			true,
+			ErrTest,
 		},
 		{
 			"ok ok",
 			result.Ok[int, error](2),
 			result.Ok[string, error]("2"),
 			"2",
-			false,
+			nil,
 		},
 		{
 			"err err",
-			result.Err[int](errors.New("123")),
-			result.Err[string](errors.New("str")),
+			result.Err[int](ErrTest),
+			result.Err[string](ErrOther),
 			"",
-			true,
+			ErrTest,
 		},
 	}
 
@@ -51,8 +50,8 @@ func TestAnd(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := result.And(tt.a, tt.b)
 
-			if tt.wantErr {
-				assert.True(t, got.IsErr())
+			if tt.wantErr != nil {
+				assert.Equal(t, tt.wantErr, got.UnwrapErr())
 				return
 			}
 
@@ -65,22 +64,37 @@ func TestAndThen(t *testing.T) {
 	tests := []struct {
 		name      string
 		a         result.Result[int, error]
+		thenErr   bool
 		wantValue string
-		wantErr   bool
+		wantErr   error
 		wantCalls int
+		wantArg   int
 	}{
 		{
 			"ok",
 			result.Ok[int, error](2),
-			"4",
 			false,
+			"4",
+			nil,
 			1,
+			2,
+		},
+		{
+			"ok to err",
+			result.Ok[int, error](2),
+			true,
+			"",
+			ErrOther,
+			1,
+			2,
 		},
 		{
 			"err",
-			result.Err[int](errors.New("123")),
+			result.Err[int](ErrTest),
+			false,
 			"",
-			true,
+			ErrTest,
+			0,
 			0,
 		},
 	}
@@ -90,13 +104,17 @@ func TestAndThen(t *testing.T) {
 			calls := 0
 			got := result.AndThen(tt.a, func(i int) result.Result[string, error] {
 				calls++
+				assert.Equal(t, tt.wantArg, i)
+				if tt.thenErr {
+					return result.Err[string](ErrOther)
+				}
 				return result.Ok[string, error](strconv.Itoa(i * i))
 			})
 
 			assert.Equal(t, tt.wantCalls, calls)
 
-			if tt.wantErr {
-				assert.True(t, got.IsErr())
+			if tt.wantErr != nil {
+				assert.Equal(t, tt.wantErr, got.UnwrapErr())
 				return
 			}
 
@@ -110,35 +128,35 @@ func TestOr(t *testing.T) {
 		name      string
 		a, b      result.Result[int, error]
 		wantValue int
-		wantErr   bool
+		wantErr   error
 	}{
 		{
 			"ok err",
 			result.Ok[int, error](2),
-			result.Err[int](errors.New("123")),
+			result.Err[int](ErrTest),
 			2,
-			false,
+			nil,
 		},
 		{
 			"err ok",
-			result.Err[int](errors.New("123")),
+			result.Err[int](ErrTest),
 			result.Ok[int, error](67),
 			67,
-			false,
+			nil,
 		},
 		{
 			"ok ok",
 			result.Ok[int, error](2),
 			result.Ok[int, error](67),
 			2,
-			false,
+			nil,
 		},
 		{
 			"err err",
-			result.Err[int](errors.New("123")),
-			result.Err[int](errors.New("str")),
+			result.Err[int](ErrTest),
+			result.Err[int](ErrOther),
 			-1,
-			true,
+			ErrOther,
 		},
 	}
 
@@ -146,8 +164,8 @@ func TestOr(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := result.Or(tt.a, tt.b)
 
-			if tt.wantErr {
-				assert.True(t, got.IsErr())
+			if tt.wantErr != nil {
+				assert.Equal(t, tt.wantErr, got.UnwrapErr())
 				return
 			}
 
@@ -160,22 +178,33 @@ func TestOrElse(t *testing.T) {
 	tests := []struct {
 		name      string
 		give      result.Result[int, error]
+		thenErr   bool
 		wantValue int
-		wantErr   bool
+		wantErr   error
 		wantCalls int
 	}{
 		{
 			"ok",
 			result.Ok[int, error](2),
-			2,
 			false,
+			2,
+			nil,
 			0,
 		},
 		{
-			"err",
-			result.Err[int](errors.New("123")),
-			67,
+			"err to ok",
+			result.Err[int](ErrTest),
 			false,
+			67,
+			nil,
+			1,
+		},
+		{
+			"err to err",
+			result.Err[int](ErrTest),
+			true,
+			-1,
+			ErrOther,
 			1,
 		},
 	}
@@ -183,15 +212,19 @@ func TestOrElse(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			calls := 0
-			got := result.OrElse(tt.give, func(error) result.Result[int, error] {
+			got := result.OrElse(tt.give, func(err error) result.Result[int, error] {
 				calls++
+				assert.Equal(t, ErrTest, err)
+				if tt.thenErr {
+					return result.Err[int](ErrOther)
+				}
 				return result.Ok[int, error](67)
 			})
 
 			assert.Equal(t, tt.wantCalls, calls)
 
-			if tt.wantErr {
-				assert.True(t, got.IsErr())
+			if tt.wantErr != nil {
+				assert.Equal(t, tt.wantErr, got.UnwrapErr())
 				return
 			}
 
