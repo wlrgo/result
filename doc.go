@@ -14,10 +14,12 @@
 //
 // # Methods and functions
 //
-// Operations that work with a single [Result] and do not need extra type
-// parameters are methods. Package-level functions are used when an operation
-// must introduce another type, such as [And], [AndThen], [Map], and
-// [Flatten], or an additional constraint, such as [Compare] and [Equal].
+// Operations on a single [Result] are methods, including those that introduce
+// another type, such as [Result.And], [Result.AndThen], [Result.Map], and
+// [Result.Or]. Package-level functions are used for construction ([Ok], [Err],
+// [From]), conversion ([Unpack]), collecting ([Collect]), flattening a nested
+// [Result] ([Flatten]), and operations that need an extra constraint, such as
+// [Compare] and [Equal].
 //
 // # API
 //
@@ -28,10 +30,11 @@
 // [Result.UnwrapOrDefault], [Result.UnwrapOrElse], [Result.ExpectErr],
 // [Result.UnwrapErr].
 //
-// Combining: [And], [AndThen], [Or], [OrElse].
+// Combining: [Result.And], [Result.AndThen], [Result.Or], [Result.OrElse].
 //
-// Transforming: [Map], [MapErr], [MapOr], [MapOrDefault], [MapOrElse],
-// [Flatten], [Result.Inspect], [Result.InspectErr].
+// Transforming: [Flatten], [Result.Map], [Result.MapErr], [Result.MapOr],
+// [Result.MapOrDefault], [Result.MapOrElse], [Result.Inspect],
+// [Result.InspectErr].
 //
 // Comparing: [Compare], [Equal], [Ge], [Gt], [Le], [Lt]. [Ok] is less than
 // any [Err].
@@ -44,8 +47,8 @@
 // # Evaluation
 //
 // Combinators that take a fallback value evaluate it before the call:
-// [And], [Or], [Result.UnwrapOr], and [MapOr]. Use the Else variants to
-// compute a fallback only when it is needed.
+// [Result.And], [Result.Or], [Result.UnwrapOr], and [Result.MapOr]. Use the
+// Else variants to compute a fallback only when it is needed.
 //
 // # Unpacking
 //
