@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/wlrgo/result"
+	"github.com/wlrgo/result/v2"
 )
 
 func TestCompare(t *testing.T) {

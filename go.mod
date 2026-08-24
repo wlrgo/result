@@ -1,6 +1,6 @@
-module github.com/wlrgo/result
+module github.com/wlrgo/result/v2
 
-go 1.23
+go 1.27
 
 require github.com/stretchr/testify v1.12.0
 
